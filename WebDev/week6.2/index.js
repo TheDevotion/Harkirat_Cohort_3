@@ -1,36 +1,37 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 
-const JWT_SECRET = "harkirat123";
+const JWT_SECRET = "JustDipak";
 
-const app = express();
+const app = new express();
 app.use(express.json());
 
-const users = [];
+let users = [];
 
-function logger(req, res, next) {
-    console.log(req.method + " request came");
+const logger = (req, res, next) => {
+    console.log(`${req.method} method came`);
     next();
-}
+};
 
-app.post("/signup", logger, function (req, res) {
-    const username = req.body.username;
-    const password = req.body.password;
-    users.push({
-        username: username,
-        password: password,
-    });
+// add this to avoid CORS
+app.get("/", (req, res) => {
+    res.sendFile(__dirname + "/public/index.html");
+});
 
-    // we should check if a user with this username already exists
+app.post("/signup", logger, (req, res) => {
+    username = req.body.username;
+    password = req.body.password;
+
+    users.push({ username, password });
 
     res.json({
-        message: "You are signed in",
+        message: "Successfully signed up !",
     });
 });
 
-app.post("/signin", logger, function (req, res) {
-    const username = req.body.username;
-    const password = req.body.password;
+app.post("/signin", logger, (req, res) => {
+    username = req.body.username;
+    password = req.body.password;
 
     let foundUser = null;
 
@@ -42,19 +43,11 @@ app.post("/signin", logger, function (req, res) {
 
     if (!foundUser) {
         res.json({
-            message: "Credentials incorrect",
+            message: "incorrect credentials",
         });
         return;
     } else {
-        const token = jwt.sign(
-            {
-                username: "raman",
-            },
-            JWT_SECRET
-        );
-        res.header("jwt", token);
-
-        res.header("random", "harkirat");
+        const token = jwt.sign({ username }, JWT_SECRET);
 
         res.json({
             token: token,
@@ -62,21 +55,26 @@ app.post("/signin", logger, function (req, res) {
     }
 });
 
-function auth(req, res, next) {
+const authMiddlware = (req, res, next) => {
     const token = req.headers.token;
-    const decodedData = jwt.verify(token, JWT_SECRET);
 
-    if (decodedData.username) {
-        req.username = decodedData.username;
-        next();
-    } else {
+    try {
+        const decodedData = jwt.verify(token, JWT_SECRET);
+        if (decodedData.username) {
+            req.username = decodedData.username;
+            next();
+        } else {
+            res.json({
+                message: "You are not logged in!",
+            });
+        }
+    } catch (e) {
         res.json({
-            message: "You are not logged in",
+            message: "wrong token!",
         });
     }
-}
-
-app.get("/me", logger, auth, function (req, res) {
+};
+app.get("/me", logger, authMiddlware, (req, res) => {
     let foundUser = null;
 
     for (let i = 0; i < users.length; i++) {

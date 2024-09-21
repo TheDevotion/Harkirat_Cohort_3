@@ -3,6 +3,8 @@
 
 ////////////////////////////////////////////////////////////////////
 
+// also adding a logger middlware.
+
 const express = require("express");
 const jwt = require("jsonwebtoken");
 
@@ -13,7 +15,12 @@ app.use(express.json());
 
 let users = [];
 
-app.post("/signup", (req, res) => {
+const logger = (req, res, next) => {
+    console.log(`${req.method} method came`);
+    next();
+};
+
+app.post("/signup", logger, (req, res) => {
     username = req.body.username;
     password = req.body.password;
 
@@ -24,7 +31,7 @@ app.post("/signup", (req, res) => {
     });
 });
 
-app.post("/signin", (req, res) => {
+app.post("/signin", logger, (req, res) => {
     username = req.body.username;
     password = req.body.password;
 
@@ -69,7 +76,7 @@ const authMiddlware = (req, res, next) => {
         });
     }
 };
-app.get("/me", authMiddlware, (req, res) => {
+app.get("/me", logger, authMiddlware, (req, res) => {
     let foundUser = null;
 
     for (let i = 0; i < users.length; i++) {
